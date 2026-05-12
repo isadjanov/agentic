@@ -1,0 +1,187 @@
+# job_hunting
+
+Produces tailored, one-page LaTeX CVs for specific job positions. Each CV is derived from `profile.my.md` and `skills.my.md`, then optimised against a parsed job description using Claude Code.
+
+Commands prefer `*.my.*` files (your personal versions) and fall back to `*.sample.*` files (committed templates) if the personal file is absent.
+
+---
+
+## Step 1 — One-time setup
+
+### 1.1 Personal details
+
+```bash
+cp .env.sample .env.my
+```
+
+Open `.env.my` and fill in your details:
+
+| Variable | What to put |
+|---|---|
+| `CV_NAME` | Your full name |
+| `CV_EMAIL` | Your email address |
+| `CV_PHONE` | Your phone number |
+| `CV_CITY` | Your city / location |
+| `CV_LINKEDIN` | Your LinkedIn URL (e.g. `linkedin.com/in/yourprofile`) |
+
+`.env.my` is gitignored and **never read by Claude** — substitution happens only inside `compile.sh` at compile time.
+
+### 1.2 Work history
+
+```bash
+cp profile.sample.md profile.my.md
+```
+
+Open `profile.my.md` and replace the sample content with your real work history. For each role, write:
+- What the system did and at what scale (numbers)
+- What you specifically changed and why
+- Before → after metrics
+
+### 1.3 Skills inventory
+
+```bash
+cp skills.sample.md skills.my.md
+```
+
+Open `skills.my.md` and replace the sample content with your real skills, grouped by category. Only skills listed here may appear in any generated CV — this is the canonical gate.
+
+### 1.4 CV template (optional)
+
+```bash
+cp template.sample.tex template.my.tex
+```
+
+Edit `template.my.tex` to customise font, margins, or section order. If you skip this step, `template.sample.tex` is used as the fallback.
+
+### 1.5 Docker
+
+Docker must be running. The `latex-jh` container is started automatically by `/startJH` — no manual setup needed.
+
+---
+
+## Step 2 — Start a session
+
+Run in Claude Code:
+
+```
+/startJH
+```
+
+This:
+- Starts the `latex-jh` Docker container (or creates it if absent)
+- Checks whether `profile.my.md`, `skills.my.md`, `template.my.tex`, and `.env.my` are present; warns if falling back to sample
+- Shows where you left off from the last session
+
+---
+
+## Step 3 — Generate a CV
+
+Run in Claude Code:
+
+```
+/generate <job URL>
+```
+
+or paste the full job description text directly after `/generate`.
+
+Claude will:
+1. Parse the job description and extract ATS keywords
+2. Score the fit against your skills (flags if below 60%)
+3. **Stop and show you the planned tech stack — you confirm or adjust before anything is written**
+4. Register the job in `jobs.md` with a generated ID (e.g. `ENG-A01`)
+5. Write `cv/ENG-A01/CV.tex` using your template and profile — personal details are placeholders
+6. Run quality checks (1-page fit, ATS coverage, no floating skills, no banned words)
+7. Compile to `cv/ENG-A01/CV.pdf` with your real details substituted from `.env.my`
+
+If the PDF comes out at 2 pages, Claude will tighten spacing and recompile automatically.
+
+---
+
+## Step 4 — Recompile (if needed)
+
+If you edit `CV.tex` manually and need to recompile:
+
+```
+/compile ENG-A01
+```
+
+---
+
+## Step 5 — End the session
+
+```
+/stopJH
+```
+
+This stops the Docker container and saves a session handoff so `/startJH` can resume next time.
+
+---
+
+## Privacy boundary
+
+```
+Claude ──writes──▶ CV.tex  (YOUR NAME placeholder)
+                      │
+compile.sh ──reads──▶ .env.my  (real details, never seen by Claude)
+                      │
+              substitutes + pdflatex ×2
+                      │
+                   CV.pdf  (real details, local only)
+```
+
+Your real name, email, and phone never appear in any file Claude reads or writes. The job ID lives in the folder path only (`cv/ENG-A01/CV.pdf`).
+
+---
+
+## File convention
+
+| Suffix | Meaning | Tracked in git |
+|---|---|---|
+| `*.sample.*` | Committed template — safe placeholder content | Yes |
+| `*.my.*` | Your personal file — real content, gitignored | No |
+
+Commands use `*.my.*` if present, fall back to `*.sample.*` otherwise.
+
+## Structure
+
+| File / Folder | Purpose |
+|---|---|
+| `profile.my.md` | Your work history (gitignored) |
+| `skills.my.md` | Your canonical skills gate — only skills here appear in CVs (gitignored) |
+| `template.my.tex` | Your personal CV format (gitignored) |
+| `.env.my` | Your personal details — **never read by Claude** (gitignored) |
+| `profile.sample.md` | Sample work history — copy to `profile.my.md` to get started |
+| `skills.sample.md` | Sample skills inventory — copy to `skills.my.md` to get started |
+| `template.sample.tex` | Sample CV format — copy to `template.my.tex` to customise |
+| `.env.sample` | Sample env file — copy to `.env.my` and fill in your details |
+| `jobs.md` | Job register: index table + detail sections (gitignored) |
+| `cv/{ID}/` | One folder per job — `CV.tex`, `CV.pdf`, LaTeX aux files (gitignored) |
+| `compile.sh` | Substitutes `.env.my` values and compiles via the Docker container |
+| `CLAUDE.md` | Full CV generation workflow — `/generate` follows this spec |
+| `.claude/commands/` | Slash commands: `startJH`, `stopJH`, `generate`, `compile` |
+
+Job ID format: `{DEPT}-{ALPHA}{NN}` — e.g. `ENG-A01`, `DAT-B03`.
+
+---
+
+## Dependencies
+
+- **Docker** — must be running; `texlive/texlive:latest` image pulled on first `/startJH`
+- **Claude Code** — all commands are Claude Code slash commands
+- **Bash** — required by `compile.sh`
+
+| Platform | Supported | Notes |
+|---|---|---|
+| Linux | Yes | — |
+| Mac | Yes | — |
+| Windows | WSL2 only | Install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) + [Docker Desktop](https://www.docker.com/products/docker-desktop/) and run everything inside the WSL2 terminal |
+
+No API keys required. All CV content comes from local files.
+
+---
+
+## Security disclaimer
+
+`.env.my` is gitignored, Claude is explicitly prohibited from reading it, and substitution happens entirely inside `compile.sh` at compile time. Review your git history before pushing any fork to ensure no personal data was accidentally committed during setup.
+
+If you find a personal data handling issue, raise a pull request with a clear description of the problem and the proposed fix.

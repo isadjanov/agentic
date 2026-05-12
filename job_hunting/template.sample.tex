@@ -1,0 +1,49 @@
+% CV template — customise font, margins, and section order here.
+% Claude reads this file on every /generate run and uses it as the base structure.
+% Section order in this file determines section order in every generated CV.
+
+\documentclass[10pt, a4paper]{article}
+
+% ── Font ─────────────────────────────────────────────────────────────────────
+% Current: Palatino — elegant serif, stands out from the default Computer Modern.
+% Alternatives: charter | lmodern | swap for sans-serif with:
+%   \usepackage{helvet}\renewcommand{\familydefault}{\sfdefault}
+\usepackage{palatino}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+% ── Layout ───────────────────────────────────────────────────────────────────
+\usepackage[margin=1.2cm, top=1.0cm, bottom=1.0cm]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{parskip}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\titlespacing{\section}{0pt}{10pt}{4pt}
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, parsep=0pt, topsep=2pt}
+\pagestyle{empty}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── HEADER ───────────────────────────────────────────────────────────────────
+% Placeholders substituted by compile.sh from .env — never change these literals.
+{\LARGE\bfseries YOUR NAME}\\[4pt]
+Your City \quad|\quad YOUR@EMAIL.COM \quad|\quad +00 000 000 0000
+\vspace{4pt}\hrule\vspace{6pt}
+
+% ── SUMMARY ──────────────────────────────────────────────────────────────────
+% Claude inserts a 2–3 sentence summary tailored to the JD here.
+
+% ── EXPERIENCE ───────────────────────────────────────────────────────────────
+\section{Experience}
+% Claude inserts experience entries here.
+
+% ── SKILLS ───────────────────────────────────────────────────────────────────
+% Intentionally last — recruiter reads experience first, skills confirm it.
+\section{Skills}
+% Claude inserts the skills table here.
+
+\end{document}
