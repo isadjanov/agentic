@@ -1,4 +1,4 @@
-Generate a tailored CV from a pasted job description and compile it to PDF. Usage: `/generate` then paste the full JD text, or `/generate {url}` to fetch from a URL.
+Generate a tailored CV from a pasted job description and compile it to PDF. Usage: `/generateJH` then paste the full JD text, or `/generateJH {url}` to fetch from a URL.
 
 The full CV generation workflow is defined in `CLAUDE.md`. Execute it now for the provided input.
 
@@ -61,7 +61,7 @@ CV written: cv/{ID}/CV.tex
   cp .env.sample .env.my
   # edit .env.my: CV_NAME, CV_EMAIL, CV_PHONE, CV_CITY, CV_LINKEDIN
 
-Then compile with: /compile {ID}
+Then compile with: /compileJH {ID}
 ```
 
 ## On completion

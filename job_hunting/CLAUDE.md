@@ -1,7 +1,7 @@
 # CLAUDE.md — LinkedIn CV Dispatch Assistant
 
 Drop this file into a directory alongside your own `profile.my.md` and `skills.my.md`.
-Claude Code will follow this workflow every time you run `/generate`.
+Claude Code will follow this workflow every time you run `/generateJH`.
 
 ---
 
@@ -85,7 +85,7 @@ cp skills.sample.md skills.my.md
 
 ## Compile command
 
-Use `/compile {ID}` — it runs `compile.sh`, which:
+Use `/compileJH {ID}` — it runs `compile.sh`, which:
 1. Loads `.env.my`
 2. Substitutes `YOUR NAME`, `YOUR@EMAIL.COM`, `+00 000 000 0000`, `Your City` in a temp copy
 3. Runs `pdflatex` twice inside the `latex-jh` container
@@ -106,9 +106,9 @@ Example: `ENG-A01`, `DAT-B03`
 
 ---
 
-## `/cover` command — CV production workflow
+## `/generateJH` command — CV production workflow
 
-When the user runs `/cover {ID}` or provides a job URL/description, execute the following steps in order.
+When the user runs `/generateJH` or provides a job URL/description, execute the following steps in order.
 
 ---
 

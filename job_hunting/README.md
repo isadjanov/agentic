@@ -79,10 +79,10 @@ This:
 Run in Claude Code:
 
 ```
-/generate <job URL>
+/generateJH <job URL>
 ```
 
-or paste the full job description text directly after `/generate`.
+or paste the full job description text directly after `/generateJH`.
 
 Claude will:
 1. Parse the job description and extract ATS keywords
@@ -102,7 +102,7 @@ If the PDF comes out at 2 pages, Claude will tighten spacing and recompile autom
 If you edit `CV.tex` manually and need to recompile:
 
 ```
-/compile ENG-A01
+/compileJH ENG-A01
 ```
 
 ---
@@ -157,8 +157,8 @@ Commands use `*.my.*` if present, fall back to `*.sample.*` otherwise.
 | `jobs.md` | Job register: index table + detail sections (gitignored) |
 | `cv/{ID}/` | One folder per job — `CV.tex`, `CV.pdf`, LaTeX aux files (gitignored) |
 | `compile.sh` | Substitutes `.env.my` values and compiles via the Docker container |
-| `CLAUDE.md` | Full CV generation workflow — `/generate` follows this spec |
-| `.claude/commands/` | Slash commands: `startJH`, `stopJH`, `generate`, `compile` |
+| `CLAUDE.md` | Full CV generation workflow — `/generateJH` follows this spec |
+| `.claude/commands/` | Slash commands: `startJH`, `stopJH`, `generateJH`, `compileJH` |
 
 Job ID format: `{DEPT}-{ALPHA}{NN}` — e.g. `ENG-A01`, `DAT-B03`.
 
