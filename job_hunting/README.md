@@ -194,6 +194,12 @@ No API keys required. All CV content comes from local files.
 
 ---
 
+## Stay updated
+
+Updates are announced in the Telegram channel: [t.me/DoneOps](https://t.me/DoneOps)
+
+---
+
 ## License
 
 Personal use only while in alpha. Commercial use is not permitted without explicit permission from the author.
