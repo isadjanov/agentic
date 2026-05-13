@@ -38,6 +38,8 @@ fi
 escape_sed() { printf '%s' "$1" | sed 's/[&\|]/\\&/g'; }
 
 TMP_TEX="${TEX_DIR}/_CV_build.tex"
+trap 'rm -f "${TEX_DIR}/_CV_build."*' EXIT
+
 sed \
   -e "s|YOUR NAME|$(escape_sed "${CV_NAME}")|g" \
   -e "s|YOUR@EMAIL\.COM|$(escape_sed "${CV_EMAIL}")|g" \
