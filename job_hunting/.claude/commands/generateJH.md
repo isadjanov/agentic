@@ -2,6 +2,35 @@ Generate a tailored CV from a pasted job description and compile it to PDF. Usag
 
 The full CV generation workflow is defined in `CLAUDE.md`. Execute it now for the provided input.
 
+## Guard — verify personal files before doing anything else
+
+Before processing any input, run:
+
+```bash
+test -f profile.my.md && echo "ok" || echo "missing"
+test -f skills.my.md && echo "ok" || echo "missing"
+```
+
+If either is missing, **stop immediately** and print:
+
+```
+Cannot generate a CV — personal files not set up:
+
+  profile.my.md:  [ok / MISSING]
+  skills.my.md:   [ok / MISSING]
+
+These files contain your real work history and skills.
+Using the sample files would produce a CV for a fictional person.
+
+Set them up first:
+  cp profile.sample.md profile.my.md   # then replace with your real work history
+  cp skills.sample.md  skills.my.md    # then replace with your real skills
+
+Then run /generateJH again.
+```
+
+Do not proceed past this point until both files exist.
+
 ## Input handling
 
 If `$ARGUMENTS` starts with `http`:

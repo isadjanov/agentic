@@ -22,7 +22,9 @@ Note: the container is named `latex-jh` (separate from the `latex` container use
 
 ### 2 — Validate required files
 
-For each file, the convention is: `*.my.*` is the user's personal file (gitignored); `*.sample.*` is the committed fallback. Commands use the personal file if present, otherwise the sample.
+The convention: `*.my.*` is the user's personal file (gitignored); `*.sample.*` is the committed template.
+`profile.my.md` and `skills.my.md` are **required** — falling back to sample data produces a CV for a
+fictional person, not the user. `/generateJH` will refuse to run without them.
 
 Check the following:
 
@@ -30,28 +32,33 @@ Check the following:
 ```bash
 test -f profile.my.md && echo "personal" || (test -f profile.sample.md && echo "sample-fallback" || echo "missing")
 ```
-- `personal` — ready, using user's own work history
-- `sample-fallback` — warn: "Using sample profile. Copy `profile.sample.md` to `profile.my.md` and replace with your real work history."
-- `missing` — error: "profile.sample.md not found. Repository may be incomplete."
+- `personal` — ✅ ready
+- `sample-fallback` — ❌ BLOCKED: "`profile.my.md` not found. `/generateJH` will not run until you create it:
+  `cp profile.sample.md profile.my.md` — then replace with your real work history and STAR stories."
+- `missing` — ❌ ERROR: "`profile.sample.md` not found. Repository may be incomplete."
 
 **Skills** — check for `skills.my.md`:
 ```bash
 test -f skills.my.md && echo "personal" || (test -f skills.sample.md && echo "sample-fallback" || echo "missing")
 ```
-- Same reporting pattern as profile above, substituting skills file names.
+- `personal` — ✅ ready
+- `sample-fallback` — ❌ BLOCKED: "`skills.my.md` not found. `/generateJH` will not run until you create it:
+  `cp skills.sample.md skills.my.md` — then replace with your real canonical skills list."
+- `missing` — ❌ ERROR: "`skills.sample.md` not found. Repository may be incomplete."
 
 **Template** — check for `template.my.tex`:
 ```bash
 test -f template.my.tex && echo "personal" || echo "sample-fallback"
 ```
-- `personal` — user has a customised template, report as active
-- `sample-fallback` — using `template.sample.tex`; tell user: "To customise: `cp template.sample.tex template.my.tex`"
+- `personal` — ✅ using customised template
+- `sample-fallback` — ⚠ using `template.sample.tex`; optional: `cp template.sample.tex template.my.tex` to customise layout
 
 **Personal details** — check for `.env.my`:
 ```bash
 test -f .env.my && echo "exists" || echo "missing"
 ```
-- `missing` — warn: "`.env.my` not found — CVs will compile with placeholder text. Copy `.env.sample` to `.env.my` and fill in your details."
+- `exists` — ✅ ready
+- `missing` — ⚠ CVs will compile with placeholder text. `cp .env.sample .env.my` and fill in your details.
 
 ### 3 — Check last session
 
@@ -65,11 +72,19 @@ If the file does not exist, tell the user this is a fresh session.
 
 ```
 Latex container:  running / ERROR: <message>
-profile.my.md:    personal / sample-fallback (copy profile.sample.md to profile.my.md) / missing
-skills.my.md:     personal / sample-fallback (copy skills.sample.md to skills.my.md) / missing
-template.my.tex:  personal / sample-fallback (cp template.sample.tex template.my.tex to customise)
-.env.my:          exists / missing (copy .env.sample to .env.my and fill in details)
-Last session:     <summary or "fresh session">
+profile.my.md:    ✅ personal  /  ❌ MISSING — cp profile.sample.md profile.my.md then edit
+skills.my.md:     ✅ personal  /  ❌ MISSING — cp skills.sample.md skills.my.md then edit
+template.my.tex:  ✅ personal  /  ⚠ sample (cp template.sample.tex template.my.tex to customise)
+.env.my:          ✅ exists    /  ⚠ missing — cp .env.sample .env.my then fill in details
+Last session:     <Next step content or "fresh session">
 ```
 
-Remind the user to run `/stopJH` when finished.
+If any ❌ items are present, end with:
+```
+Session NOT ready — fix the ❌ items above before running /generateJH.
+```
+
+Otherwise end with:
+```
+Session ready. Run /stopJH when finished.
+```
