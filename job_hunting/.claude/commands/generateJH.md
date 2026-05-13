@@ -47,14 +47,17 @@ If `$ARGUMENTS` is plain text — treat it directly as the job description.
 
 ## Execute CLAUDE.md workflow
 
+**Steps 1–3 run silently.** Do not narrate each step. Output only the fit score, any gap questions, and the planned stack block — nothing else before Step 4.
+
 Run Steps 1 through 8 from `CLAUDE.md` in order:
 
 1. Parse the job description (already have it — skip the curl if pasted)
-2. JD analysis — keywords, JD Spirit, Profile ID, Recruiter Priority Stack, anti-signals, gap table
-3. Fit score + go/no-go decision
-4. **STOP** — present planned tech stack and wait for user confirmation before proceeding
+2. *(silent)* JD analysis — keywords, JD Spirit, Profile ID, Recruiter Priority Stack, anti-signals, gap table
+3. *(silent)* Fit score + go/no-go decision
+4. **STOP** — output fit score, gap questions (if any), and planned tech stack; wait for user confirmation before proceeding
 5. Register job in `jobs.md` (index row only)
 6. Check for `template.my.tex`, fall back to `template.sample.tex` if absent, then create `cv/{ID}/CV.tex` using its preamble and section order — use placeholders for all personal details (see CLAUDE.md Step 6)
+6b. **STOP** — present all experience bullets in plain text for review; wait for user confirmation; apply all edits in one batch before proceeding
 7. Run all quality checks from the checklist in `CLAUDE.md`
 
 ## Compile

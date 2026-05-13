@@ -263,6 +263,28 @@ If not, reorder bullets or reframe the Summary.
 
 ---
 
+### Step 6b — Experience review (STOP and wait for user)
+
+After writing `CV.tex`, present all experience bullets in plain text (not LaTeX) for review:
+
+```
+EPAM Systems — Lead Developer (May 2021 – Present)
+  • [bullet 1]
+  • [bullet 2]
+  ...
+
+Sber — Java Backend Developer (Sep 2019 – May 2021)
+  • [bullet 1]
+  ...
+```
+
+Ask: "Do the bullets look correct? Confirm or tell me what to change."
+
+**Do not compile until the user confirms the experience section.**
+Apply all requested edits in one batch, then proceed to Step 8.
+
+---
+
 ### Step 7 — First interview (when user says "first interview with [company]")
 
 Output a **company positioning block** immediately, before anything else:
