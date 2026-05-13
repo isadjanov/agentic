@@ -194,6 +194,12 @@ No API keys required. All CV content comes from local files.
 
 ---
 
+## License
+
+Personal use only while in alpha. Commercial use is not permitted without explicit permission from the author.
+
+---
+
 ## Security disclaimer
 
 `.env.my` is gitignored, Claude is explicitly prohibited from reading it, and substitution happens entirely inside `compile.sh` at compile time.
