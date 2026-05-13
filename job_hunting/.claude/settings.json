@@ -1,5 +1,9 @@
 {
   "permissions": {
+    "deny": [
+      "Read(cv/**)",
+      "Read(.env*)"
+    ],
     "allow": [
       "Bash(docker start *)",
       "Bash(docker run *)",
