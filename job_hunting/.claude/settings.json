@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker start *)",
+      "Bash(docker run *)",
+      "Bash(docker stop *)",
+      "Bash(docker ps *)",
+      "Bash(chmod +x *)",
+      "Bash(curl *)",
+      "Bash(git *)",
+      "Bash(bash *)"
+    ]
+  }
+}
