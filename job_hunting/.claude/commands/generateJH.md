@@ -25,7 +25,7 @@ Run Steps 1 through 8 from `CLAUDE.md` in order:
 3. Fit score + go/no-go decision
 4. **STOP** — present planned tech stack and wait for user confirmation before proceeding
 5. Register job in `jobs.md` (index row only)
-6. Check for `my_template.tex`, fall back to `template.my.tex` if absent, then create `cv/{ID}/CV.tex` using its preamble and section order — use placeholders for all personal details (see CLAUDE.md Step 6)
+6. Check for `template.my.tex`, fall back to `template.sample.tex` if absent, then create `cv/{ID}/CV.tex` using its preamble and section order — use placeholders for all personal details (see CLAUDE.md Step 6)
 7. Run all quality checks from the checklist in `CLAUDE.md`
 
 ## Compile
