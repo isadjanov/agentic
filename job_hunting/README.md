@@ -182,6 +182,14 @@ No API keys required. All CV content comes from local files.
 
 ## Security disclaimer
 
-`.env.my` is gitignored, Claude is explicitly prohibited from reading it, and substitution happens entirely inside `compile.sh` at compile time. Review your git history before pushing any fork to ensure no personal data was accidentally committed during setup.
+`.env.my` is gitignored, Claude is explicitly prohibited from reading it, and substitution happens entirely inside `compile.sh` at compile time.
+
+Before pushing any fork, verify no personal file was ever accidentally committed:
+
+```bash
+git log --all --oneline -- .env.my profile.my.md skills.my.md template.my.tex jobs.md
+```
+
+This should return no output. If it does, the listed commits contain personal data and must be purged from history before the repo is made public.
 
 If you find a personal data handling issue, raise a pull request with a clear description of the problem and the proposed fix.
