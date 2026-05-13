@@ -106,6 +106,12 @@ If the PDF comes out at 2 pages, Claude will tighten spacing and recompile autom
 
 ---
 
+## Before sending to the employer
+
+Open `cv/{ID}/CV.pdf`, read it in full, and re-save or re-export it before attaching to any application. This ensures you have reviewed the final content — Claude generates from your profile data, but you are responsible for what goes out.
+
+---
+
 ## Step 4 — Recompile (if needed)
 
 If you edit `CV.tex` manually and need to recompile:
