@@ -2,7 +2,7 @@
 
 Produces tailored, one-page LaTeX CVs for specific job positions. Each CV is derived from `profile.my.md` and `skills.my.md`, then optimised against a parsed job description using Claude Code.
 
-Commands prefer `*.my.*` files (your personal versions) and fall back to `*.sample.*` files (committed templates) if the personal file is absent.
+Each file has a `*.sample.*` committed template and a `*.my.*` personal version (gitignored). **`profile.my.md` and `skills.my.md` are required** — `/generateJH` will refuse to run without them. `template.my.tex` and `.env.my` have acceptable fallbacks and can be set up later.
 
 ---
 
@@ -26,7 +26,7 @@ Open `.env.my` and fill in your details:
 
 `.env.my` is gitignored and **never read by Claude** — substitution happens only inside `compile.sh` at compile time.
 
-### 1.2 Work history
+### 1.2 Work history (required)
 
 ```bash
 cp profile.sample.md profile.my.md
@@ -37,13 +37,17 @@ Open `profile.my.md` and replace the sample content with your real work history.
 - What you specifically changed and why
 - Before → after metrics
 
-### 1.3 Skills inventory
+`/generateJH` will not run if this file is missing.
+
+### 1.3 Skills inventory (required)
 
 ```bash
 cp skills.sample.md skills.my.md
 ```
 
 Open `skills.my.md` and replace the sample content with your real skills, grouped by category. Only skills listed here may appear in any generated CV — this is the canonical gate.
+
+`/generateJH` will not run if this file is missing.
 
 ### 1.4 CV template (optional)
 
@@ -69,7 +73,10 @@ Run in Claude Code:
 
 This:
 - Starts the `latex-jh` Docker container (or creates it if absent)
-- Checks whether `profile.my.md`, `skills.my.md`, `template.my.tex`, and `.env.my` are present; warns if falling back to sample
+- Checks all personal files and reports status for each:
+  - `profile.my.md` / `skills.my.md` — ❌ blocks the session if missing; shows the exact `cp` command to fix it
+  - `template.my.tex` — ⚠ warns if absent, falls back to `template.sample.tex`
+  - `.env.my` — ⚠ warns if absent; CVs will still be written but not compiled until it is created
 - Shows where you left off from the last session
 
 ---
@@ -83,6 +90,8 @@ Run in Claude Code:
 ```
 
 or paste the full job description text directly after `/generateJH`.
+
+If `profile.my.md` or `skills.my.md` are missing, the command stops immediately with setup instructions before doing any work.
 
 Claude will:
 1. Parse the job description and extract ATS keywords
@@ -140,7 +149,12 @@ Your real name, email, and phone never appear in any file Claude reads or writes
 | `*.sample.*` | Committed template — safe placeholder content | Yes |
 | `*.my.*` | Your personal file — real content, gitignored | No |
 
-Commands use `*.my.*` if present, fall back to `*.sample.*` otherwise.
+| File | Fallback behaviour |
+|---|---|
+| `profile.my.md` | **Required** — `/generateJH` blocks if missing |
+| `skills.my.md` | **Required** — `/generateJH` blocks if missing |
+| `template.my.tex` | Optional — falls back to `template.sample.tex` |
+| `.env.my` | Optional at write time — required to compile PDF |
 
 ## Structure
 
