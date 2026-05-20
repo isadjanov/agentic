@@ -132,13 +132,15 @@ Use `/analyze_job_description_jh` to separate the non-interactive analysis from 
 
 **Phase 1 — run in parallel across N Claude Code sessions:**
 
+> Phase 1 does not need Docker or `/start_jh` — it is pure analysis with no compilation. Switch to **Haiku** (`meta+p`) before starting each session to save tokens; switch back to Sonnet for Phase 2.
+
 ```
 /analyze_job_description_jh <job URL>   # session 1
 /analyze_job_description_jh <job URL>   # session 2
 /analyze_job_description_jh <job URL>   # session 3
 ```
 
-Each session fetches the JD, scores fit, and saves the full analysis to `cv/.pending/{slug}/analysis.md`. No writes to `jobs.md` or `skills.my.md` — fully parallel-safe. Each outputs the fit score and the path to resume from.
+Each session fetches the JD, scores fit, resolves skill gap questions interactively, and saves the full analysis to `cv/.pending/{slug}/analysis.md`. No writes to `jobs.md` or `skills.my.md` — fully parallel-safe.
 
 **Phase 2 — run sequentially in one session:**
 

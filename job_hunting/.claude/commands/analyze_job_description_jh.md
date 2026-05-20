@@ -76,8 +76,8 @@ analyzed: {YYYY-MM-DD}
 {list — elements to suppress or reframe}
 
 ## Gap Table
-| JD requirement | In skills.md? | Action |
-|---|---|---|
+| JD requirement | In skills.md? | Confirmed? | Action |
+|---|---|---|---|
 ...
 
 ## Fit Score
@@ -94,6 +94,28 @@ Suppressed (anti-signals): {list}
 Dropped (not in skills.md / not JD-matched): {list}
 ```
 
+## Gap question resolution (STOP if unknowns exist)
+
+After saving the initial analysis, check the Gap Table for any rows where `In skills.md?` is `No` and the skill is plausible given the user's background.
+
+If any unknowns exist, **stop and ask the user about each one** before closing:
+
+```
+Before finishing — a few quick questions about skills not in skills.my.md:
+
+  1. Do you have experience with {skill}? (yes / no / partial)
+  2. Do you have experience with {skill}? (yes / no / partial)
+  ...
+```
+
+Wait for the user to reply. Then:
+- Update the Gap Table in `analysis.md` — set `Confirmed?` to `yes / no / partial` for each answered item
+- If confirmed `yes` or `partial` — update `Action` to `Include` and add the skill to the Planned Stack in `analysis.md`
+- If confirmed `no` — set `Action` to `Drop`
+- **Do not write to `skills.my.md`** — that happens in `/generate_cv_jh` after stack confirmation
+
+If no unknowns exist, skip this step entirely.
+
 ## Output
 
 Print only:
@@ -101,8 +123,7 @@ Print only:
 ```
 Fit: {N}% ({GO | CAVEATS | NO-GO})
 
-Gaps requiring confirmation:
-  [list any unknowns where user input is needed — or "none"]
+Gap questions: resolved ✓  [or list any that remain unanswered]
 
 Analysis saved: cv/.pending/{slug}/analysis.md
 
@@ -111,4 +132,3 @@ Run when ready:
 ```
 
 Do not ask for stack confirmation here — that happens in `/generate_cv_jh`.
-If there are unknowns in the gap table, list them in the output so the user can answer before running `/generate_cv_jh`.

@@ -61,7 +61,15 @@ test -f .env.my && echo "exists" || echo "missing"
 - `exists` — ✅ ready
 - `missing` — ⚠ CVs will compile with placeholder text. `cp .env.sample .env.my` and fill in your details.
 
-### 3 — Check last session
+### 3 — Check pending analyses
+
+```bash
+ls cv/.pending/*/analysis.md 2>/dev/null
+```
+
+Count the results and note the slugs.
+
+### 4 — Check last session
 
 Read `last_session.md` in the current working directory.
 
@@ -69,7 +77,7 @@ If the file exists, show the **Next step** section so the user knows where they 
 
 If the file does not exist, tell the user this is a fresh session.
 
-### 4 — Print session summary
+### 5 — Print session summary
 
 ```
 Latex container:  running / ERROR: <message>
@@ -77,6 +85,7 @@ profile.my.md:    ✅ personal  /  ❌ MISSING — cp profile.sample.md profile.
 skills.my.md:     ✅ personal  /  ❌ MISSING — cp skills.sample.md skills.my.md then edit
 template.my.tex:  ✅ personal  /  ⚠ sample (cp template.sample.tex template.my.tex to customise)
 .env.my:          ✅ exists    /  ⚠ missing — cp .env.sample .env.my then fill in details
+Pending analyses: {N} ({slug1}, {slug2}, ...)  /  none
 Last session:     <Next step content or "fresh session">
 ```
 
