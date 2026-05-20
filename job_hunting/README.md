@@ -2,7 +2,7 @@
 
 Produces tailored, one-page LaTeX CVs for specific job positions. Each CV is derived from `profile.my.md` and `skills.my.md`, then optimised against a parsed job description using Claude Code.
 
-Each file has a `*.sample.*` committed template and a `*.my.*` personal version (gitignored). **`profile.my.md` and `skills.my.md` are required** — `/generateJH` will refuse to run without them. `template.my.tex` and `.env.my` have acceptable fallbacks and can be set up later.
+Each file has a `*.sample.*` committed template and a `*.my.*` personal version (gitignored). **`profile.my.md` and `skills.my.md` are required** — `/generate_cv_jh` will refuse to run without them. `template.my.tex` and `.env.my` have acceptable fallbacks and can be set up later.
 
 ---
 
@@ -37,7 +37,7 @@ Open `profile.my.md` and replace the sample content with your real work history.
 - What you specifically changed and why
 - Before → after metrics
 
-`/generateJH` will not run if this file is missing.
+`/generate_cv_jh` will not run if this file is missing.
 
 ### 1.3 Skills inventory (required)
 
@@ -47,19 +47,38 @@ cp skills.sample.md skills.my.md
 
 Open `skills.my.md` and replace the sample content with your real skills, grouped by category. Only skills listed here may appear in any generated CV — this is the canonical gate.
 
-`/generateJH` will not run if this file is missing.
+`/generate_cv_jh` will not run if this file is missing.
 
-### 1.4 CV template (optional)
+### 1.4 CV template (required before first CV)
 
 ```bash
 cp template.sample.tex template.my.tex
 ```
 
-Edit `template.my.tex` to customise font, margins, or section order. If you skip this step, `template.sample.tex` is used as the fallback.
+`template.my.tex` is your personal template — formatting is your choice. The sample gives you the correct structure (placeholders, section markers, preamble) but font, margins, spacing, and visual style are yours to decide.
+
+> **Why?** Deliberately leaving visual formatting to each user ensures no two people produce identically styled CVs. A recruiter who sees the same layout repeatedly recognises a tool — your template should look like you, not like everyone else who used this project.
+
+**A good CV template must:**
+- Produce exactly **1 page** — this is a hard requirement, not a preference
+- Be readable at 10–11pt font
+- Have tight but not cramped margins (1.5–2 cm typical)
+- Have clear visual separation between sections
+
+**Claude can help with specific changes** — describe what you want:
+
+> "The section headers need more visual weight"
+> "Margins are too wide, I'm losing a line of content"
+> "Make the bullet spacing tighter"
+> "Switch the font to something more ATS-friendly"
+
+Claude will edit `template.my.tex` in place and leave your aesthetic choices intact. Run `/recompile_cv` on an existing CV after any template change to verify the output is still 1 page.
+
+Once `template.my.tex` exists, every future `/generate_cv_jh` run uses it automatically. If you skip this step, `template.sample.tex` is used as a fallback — review it first to decide whether it meets your standard.
 
 ### 1.5 Docker
 
-Docker must be running. The `latex-jh` container is started automatically by `/startJH` — no manual setup needed.
+Docker must be running. The `latex-jh` container is started automatically by `/start_jh` — no manual setup needed.
 
 ---
 
@@ -68,7 +87,7 @@ Docker must be running. The `latex-jh` container is started automatically by `/s
 Run in Claude Code:
 
 ```
-/startJH
+/start_jh
 ```
 
 This:
@@ -83,13 +102,15 @@ This:
 
 ## Step 3 — Generate a CV
 
+### Single job (default)
+
 Run in Claude Code:
 
 ```
-/generateJH <job URL>
+/generate_cv_jh <job URL>
 ```
 
-or paste the full job description text directly after `/generateJH`.
+or paste the full job description text directly after `/generate_cv_jh`.
 
 If `profile.my.md` or `skills.my.md` are missing, the command stops immediately with setup instructions before doing any work.
 
@@ -99,10 +120,36 @@ Claude will:
 3. **Stop and show you the planned tech stack — you confirm or adjust before anything is written**
 4. Register the job in `jobs.md` with a generated ID (e.g. `ENG-A01`)
 5. Write `cv/ENG-A01/CV.tex` using your template and profile — personal details are placeholders
-6. Run quality checks (1-page fit, ATS coverage, no floating skills, no banned words)
-7. Compile to `cv/ENG-A01/CV.pdf` with your real details substituted from `.env.my`
+6. **Stop and show you all experience bullets in plain text — you confirm or request edits**
+7. Run quality checks (1-page fit, ATS coverage, no floating skills, no banned words)
+8. Compile to `cv/ENG-A01/CV.pdf` with your real details substituted from `.env.my`
 
 If the PDF comes out at 2 pages, Claude will tighten spacing and recompile automatically.
+
+### Parallel batch (multiple jobs at once)
+
+Use `/analyze_job_description_jh` to separate the non-interactive analysis from the interactive CV writing.
+
+**Phase 1 — run in parallel across N Claude Code sessions:**
+
+```
+/analyze_job_description_jh <job URL>   # session 1
+/analyze_job_description_jh <job URL>   # session 2
+/analyze_job_description_jh <job URL>   # session 3
+```
+
+Each session fetches the JD, scores fit, and saves the full analysis to `cv/.pending/{slug}/analysis.md`. No writes to `jobs.md` or `skills.my.md` — fully parallel-safe. Each outputs the fit score and the path to resume from.
+
+**Phase 2 — run sequentially in one session:**
+
+```
+/generate_cv_jh cv/.pending/stripe-backend-engineer/analysis.md
+/generate_cv_jh cv/.pending/cloudflare-platform-engineer/analysis.md
+```
+
+Skips Steps 1–3 (already done), jumps straight to stack confirmation. After a successful compile the pending file is archived into `cv/{ID}/analysis.md` and the slot is removed.
+
+**Net effect:** total time is `max(analysis times) + sum(write times)` instead of `sum(all steps × N)`.
 
 ---
 
@@ -117,7 +164,7 @@ Open `cv/{ID}/CV.pdf`, read it in full, and re-save or re-export it before attac
 If you edit `CV.tex` manually and need to recompile:
 
 ```
-/compileJH ENG-A01
+/recompile_cv ENG-A01
 ```
 
 ---
@@ -125,10 +172,10 @@ If you edit `CV.tex` manually and need to recompile:
 ## Step 5 — End the session
 
 ```
-/stopJH
+/stop_jh
 ```
 
-This stops the Docker container and saves a session handoff so `/startJH` can resume next time.
+This stops the Docker container and saves a session handoff so `/start_jh` can resume next time.
 
 ---
 
@@ -157,9 +204,9 @@ Your real name, email, and phone never appear in any file Claude reads or writes
 
 | File | Fallback behaviour |
 |---|---|
-| `profile.my.md` | **Required** — `/generateJH` blocks if missing |
-| `skills.my.md` | **Required** — `/generateJH` blocks if missing |
-| `template.my.tex` | Optional — falls back to `template.sample.tex` |
+| `profile.my.md` | **Required** — `/generate_cv_jh` blocks if missing |
+| `skills.my.md` | **Required** — `/generate_cv_jh` blocks if missing |
+| `template.my.tex` | **Required before first CV** — sample fallback is not production-ready; ask Claude to format it |
 | `.env.my` | Optional at write time — required to compile PDF |
 
 ## Structure
@@ -175,10 +222,11 @@ Your real name, email, and phone never appear in any file Claude reads or writes
 | `template.sample.tex` | Sample CV format — copy to `template.my.tex` to customise |
 | `.env.sample` | Sample env file — copy to `.env.my` and fill in your details |
 | `jobs.md` | Job register: index table + detail sections (gitignored) |
-| `cv/{ID}/` | One folder per job — `CV.tex`, `CV.pdf`, LaTeX aux files (gitignored) |
+| `cv/{ID}/` | One folder per job — `CV.tex`, `CV.pdf`, `analysis.md`, LaTeX aux files (gitignored) |
+| `cv/.pending/{slug}/` | Temporary analysis output from `/analyze_job_description_jh` — moved to `cv/{ID}/` after compile (gitignored) |
 | `compile.sh` | Substitutes `.env.my` values and compiles via the Docker container |
-| `CLAUDE.md` | Full CV generation workflow — `/generateJH` follows this spec |
-| `.claude/commands/` | Slash commands: `startJH`, `stopJH`, `generateJH`, `compileJH` |
+| `CLAUDE.md` | Full CV generation workflow — `/generate_cv_jh` follows this spec |
+| `.claude/commands/` | Slash commands: `start_jh`, `stop_jh`, `analyze_job_description_jh`, `generate_cv_jh`, `recompile_cv` |
 
 Job ID format: `{DEPT}-{ALPHA}{NN}` — e.g. `ENG-A01`, `DAT-B03`.
 
@@ -186,7 +234,7 @@ Job ID format: `{DEPT}-{ALPHA}{NN}` — e.g. `ENG-A01`, `DAT-B03`.
 
 ## Dependencies
 
-- **Docker** — must be running; `texlive/texlive:latest` image pulled on first `/startJH`
+- **Docker** — must be running; `texlive/texlive:latest` image pulled on first `/start_jh`
 - **Claude Code** — all commands are Claude Code slash commands
 - **Bash** — required by `compile.sh`
 

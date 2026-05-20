@@ -24,7 +24,7 @@ Note: the container is named `latex-jh` (separate from the `latex` container use
 
 The convention: `*.my.*` is the user's personal file (gitignored); `*.sample.*` is the committed template.
 `profile.my.md` and `skills.my.md` are **required** — falling back to sample data produces a CV for a
-fictional person, not the user. `/generateJH` will refuse to run without them.
+fictional person, not the user. `/generate_cv_jh` will refuse to run without them.
 
 Check the following:
 
@@ -33,7 +33,7 @@ Check the following:
 test -f profile.my.md && echo "personal" || (test -f profile.sample.md && echo "sample-fallback" || echo "missing")
 ```
 - `personal` — ✅ ready
-- `sample-fallback` — ❌ BLOCKED: "`profile.my.md` not found. `/generateJH` will not run until you create it:
+- `sample-fallback` — ❌ BLOCKED: "`profile.my.md` not found. `/generate_cv_jh` will not run until you create it:
   `cp profile.sample.md profile.my.md` — then replace with your real work history and STAR stories."
 - `missing` — ❌ ERROR: "`profile.sample.md` not found. Repository may be incomplete."
 
@@ -42,7 +42,7 @@ test -f profile.my.md && echo "personal" || (test -f profile.sample.md && echo "
 test -f skills.my.md && echo "personal" || (test -f skills.sample.md && echo "sample-fallback" || echo "missing")
 ```
 - `personal` — ✅ ready
-- `sample-fallback` — ❌ BLOCKED: "`skills.my.md` not found. `/generateJH` will not run until you create it:
+- `sample-fallback` — ❌ BLOCKED: "`skills.my.md` not found. `/generate_cv_jh` will not run until you create it:
   `cp skills.sample.md skills.my.md` — then replace with your real canonical skills list."
 - `missing` — ❌ ERROR: "`skills.sample.md` not found. Repository may be incomplete."
 
@@ -51,7 +51,8 @@ test -f skills.my.md && echo "personal" || (test -f skills.sample.md && echo "sa
 test -f template.my.tex && echo "personal" || echo "sample-fallback"
 ```
 - `personal` — ✅ using customised template
-- `sample-fallback` — ⚠ using `template.sample.tex`; optional: `cp template.sample.tex template.my.tex` to customise layout
+- `sample-fallback` — ⚠ `template.my.tex` not found — falling back to `template.sample.tex`. Review it before your first CV; copy and customise when ready:
+  `cp template.sample.tex template.my.tex` — formatting is yours to decide; ask Claude for help with specific changes.
 
 **Personal details** — check for `.env.my`:
 ```bash
@@ -81,10 +82,10 @@ Last session:     <Next step content or "fresh session">
 
 If any ❌ items are present, end with:
 ```
-Session NOT ready — fix the ❌ items above before running /generateJH.
+Session NOT ready — fix the ❌ items above before running /generate_cv_jh.
 ```
 
 Otherwise end with:
 ```
-Session ready. Run /stopJH when finished.
+Session ready. Run /stop_jh when finished.
 ```

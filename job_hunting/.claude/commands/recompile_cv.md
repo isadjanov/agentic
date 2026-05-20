@@ -1,4 +1,4 @@
-Compile a CV to PDF with personal details substituted from `.env.my`. Usage: `/compileJH ENG-A01`
+Compile a CV to PDF with personal details substituted from `.env.my`. Usage: `/recompile_cv ENG-A01`
 
 The job ID comes from `$ARGUMENTS`. If no ID is provided, list available CVs and ask the user which to compile.
 
@@ -40,7 +40,7 @@ Stream the output. If the command exits non-zero, report the error verbatim and 
 
 Scan the pdflatex output for the page count line:
 - If it says `(1 page, ...)` → report success
-- If it says `(2 pages, ...)` or more → warn the user: "CV is N pages — tighten margins, spacing, or bullets and re-run `/compileJH {ID}`"
+- If it says `(2 pages, ...)` or more → warn the user: "CV is N pages — tighten margins, spacing, or bullets and re-run `/recompile_cv {ID}`"
 - If the page count line is absent → report that the log was inconclusive and ask the user to open the PDF
 
 ### 5 — Confirm to user

@@ -1,4 +1,4 @@
-Generate a tailored CV from a pasted job description and compile it to PDF. Usage: `/generateJH` then paste the full JD text, or `/generateJH {url}` to fetch from a URL.
+Generate a tailored CV from a job description and compile it to PDF. Usage: `/generate_cv_jh` (auto-picks up pending analysis), `/generate_cv_jh {url}`, or paste the full JD text after the command.
 
 The full CV generation workflow is defined in `CLAUDE.md`. Execute it now for the provided input.
 
@@ -26,14 +26,35 @@ Set them up first:
   cp profile.sample.md profile.my.md   # then replace with your real work history
   cp skills.sample.md  skills.my.md    # then replace with your real skills
 
-Then run /generateJH again.
+Then run /generate_cv_jh again.
 ```
 
 Do not proceed past this point until both files exist.
 
 ## Input handling
 
-If `$ARGUMENTS` starts with `http`:
+**If `$ARGUMENTS` is empty** — check for pending analyses:
+
+```bash
+ls cv/.pending/*/analysis.md 2>/dev/null
+```
+
+- **1 file found** — use it automatically. Print: `Resuming from cv/.pending/{slug}/analysis.md` then skip to Step 4.
+- **2+ files found** — list them numbered and ask the user which one to use. Wait for reply, then skip to Step 4.
+- **0 files found** — stop and ask the user to provide a job URL or paste the JD:
+  ```
+  No pending analysis found. Provide a job description:
+    /analyze_job_description_jh <url>   — analyze first (for parallel batches)
+    /generate_cv_jh <url>  — or go directly with a URL
+  ```
+
+**If `$ARGUMENTS` starts with `cv/.pending/`** — resume from that specific analysis file:
+- Read the file
+- Skip Steps 1–3 entirely — all analysis data is already in the file
+- Jump directly to Step 4 using the Planned Stack, Fit Score, Recruiter Priority Stack, Anti-signals, and Gap Table from the file
+- The Raw JD section of the file is the job description for CV writing
+
+**If `$ARGUMENTS` starts with `http`:**
 - Fetch the page:
   ```bash
   curl -s '$ARGUMENTS' -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
@@ -43,11 +64,11 @@ If `$ARGUMENTS` starts with `http`:
   https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs/{gh_jid}
   ```
 
-If `$ARGUMENTS` is plain text — treat it directly as the job description.
+**If `$ARGUMENTS` is plain text** — treat it directly as the job description.
 
 ## Execute CLAUDE.md workflow
 
-**Steps 1–3 run silently.** Do not narrate each step. Output only the fit score, any gap questions, and the planned stack block — nothing else before Step 4.
+**Steps 1–3 run silently** (skipped entirely when resuming from a saved analysis). Do not narrate each step. Output only the fit score, any gap questions, and the planned stack block — nothing else before Step 4.
 
 Run Steps 1 through 8 from `CLAUDE.md` in order:
 
@@ -93,7 +114,16 @@ CV written: cv/{ID}/CV.tex
   cp .env.sample .env.my
   # edit .env.my: CV_NAME, CV_EMAIL, CV_PHONE, CV_CITY, CV_LINKEDIN
 
-Then compile with: /compileJH {ID}
+Then compile with: /recompile_cv {ID}
+```
+
+## Pending analysis cleanup
+
+If this run was started from a `cv/.pending/{slug}/analysis.md` file, move it into the job folder after a successful compile:
+
+```bash
+mv cv/.pending/{slug}/analysis.md cv/{ID}/analysis.md
+rmdir cv/.pending/{slug} 2>/dev/null || true
 ```
 
 ## On completion
