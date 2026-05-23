@@ -1,7 +1,11 @@
-# CLAUDE.md — LinkedIn CV Dispatch Assistant
+# CLAUDE.md
 
-Drop this file into a directory alongside your own `profile.my.md` and `skills.my.md`.
-Claude Code will follow this workflow every time you run `/generateJH`.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Module purpose
+
+Produces tailored, one-page LaTeX CVs for specific job positions.
+Each CV is derived from `profile.my.md` and optimised against a parsed job description.
 
 ---
 
@@ -12,10 +16,22 @@ If any step requires personal details, use the placeholders (`YOUR NAME`, `YOUR@
 
 ---
 
-## Module purpose
+## Session commands
 
-Produces tailored, one-page LaTeX CVs for specific job positions.
-Each CV is derived from `profile.my.md` and optimised against a parsed job description.
+| Command | When to use |
+|---|---|
+| `/start_jh` | Start of every session — boots `latex-jh` container, validates files, shows pending analyses and last session state |
+| `/stop_jh` | End of session — stops container, writes `last_session.md` handoff |
+| `/analyze_job_description_jh {url\|text}` | Phase 1 of batch workflow — parallel-safe, runs Steps 1–3, saves result to `cv/.pending/{slug}/analysis.md` |
+| `/generate_cv_jh [{url\|text}]` | Phase 2 — picks up pending analysis (or takes fresh input), runs Steps 4–8, compiles PDF |
+| `/recompile_cv {ID}` | Re-runs `compile.sh` on an existing `CV.tex` without regenerating content |
+
+**Batch workflow (run multiple JDs in parallel):**
+```
+/analyze_job_description_jh <url1>   # run N of these first
+/analyze_job_description_jh <url2>
+/generate_cv_jh                       # then run sequentially, one per job
+```
 
 ---
 
@@ -85,7 +101,7 @@ cp skills.sample.md skills.my.md
 
 ## Compile command
 
-Use `/compileJH {ID}` — it runs `compile.sh`, which:
+Use `/recompile_cv {ID}` — it runs `compile.sh`, which:
 1. Loads `.env.my`
 2. Substitutes `YOUR NAME`, `YOUR@EMAIL.COM`, `+00 000 000 0000`, `Your City` in a temp copy
 3. Runs `pdflatex` twice inside the `latex-jh` container
@@ -106,9 +122,9 @@ Example: `ENG-A01`, `DAT-B03`
 
 ---
 
-## `/generateJH` command — CV production workflow
+## `/generate_cv_jh` command — CV production workflow
 
-When the user runs `/generateJH` or provides a job URL/description, execute the following steps in order.
+When the user runs `/generate_cv_jh` or provides a job URL/description, execute the following steps in order.
 
 ---
 
@@ -152,7 +168,7 @@ These are the only terms bolded in the Summary. Metrics are bolded freely in bul
 **E. Anti-signals** — identify any elements in the profile that could be misread for this role.
 Flag them — they must be suppressed or reframed in the CV.
 
-**F. Gap analysis** — map every JD hard requirement against `skills.md`:
+**F. Gap analysis** — map every JD hard requirement against `skills.my.md`:
 
 | JD requirement | In skills.md? | Action |
 |---|---|---|
@@ -197,7 +213,7 @@ Dropped (not in skills.md / not JD-matched): [list]
 ```
 
 **Do not proceed to Step 5 until the user confirms the stack.**
-If user confirms a new skill, add it to `skills.md` before writing the CV.
+If user confirms a new skill, add it to `skills.my.md` before writing the CV.
 
 ---
 
