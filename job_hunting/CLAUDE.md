@@ -4,8 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Module purpose
 
-Produces tailored, one-page LaTeX CVs for specific job positions.
-Each CV is derived from `profile.my.md` and optimised against a parsed job description.
+Handles two workflows:
+- **Outbound** — produces tailored, one-page LaTeX CVs for positions you apply to, derived from `profile.my.md` and optimised against a parsed job description.
+- **Inbound** — interview preparation for positions where the employer contacted you first. No CV generation; goes straight to analysis and stage-by-stage prep files.
 
 ---
 
@@ -26,12 +27,24 @@ If any step requires personal details, use the placeholders (`YOUR NAME`, `YOUR@
 | `/generate_cv_jh [{url\|text}]` | Phase 2 — picks up pending analysis (or takes fresh input), runs Steps 4–8, compiles PDF |
 | `/recompile_cv {ID}` | Re-runs `compile.sh` on an existing `CV.tex` without regenerating content |
 
-**Batch workflow (run multiple JDs in parallel):**
+**Outbound batch workflow (run multiple JDs in parallel):**
 ```
 /analyze_job_description_jh <url1>   # run N of these first
 /analyze_job_description_jh <url2>
 /generate_cv_jh                       # then run sequentially, one per job
 ```
+
+**Inbound workflow (employer contacted you — no CV needed):**
+```
+1. Gather materials — hiring guide PDF, job email, any JD the employer shared
+2. Register in jobs.md with status: interviewing
+3. mkdir findings/{ID}/
+4. Agentic analysis — read all materials, create findings/{ID}/analysis.md
+   (company facts, tech stack, interview process, decisions e.g. minimal stack)
+5. Create stage-specific prep files as needed:
+   findings/{ID}/prep_screening.md, prep_build_it.md, prep_system_design.md, etc.
+```
+No slash command — this is pure agentic work driven by what the employer sends.
 
 ---
 
@@ -47,6 +60,7 @@ If any step requires personal details, use the placeholders (`YOUR NAME`, `YOUR@
 | `skills.my.md` | **Canonical skills inventory** — only skills listed here may appear in a CV (gitignored) |
 | `jobs.md` | Job register — index table + full detail section per position (gitignored) |
 | `cv/{ID}/` | One folder per job; contains `CV.tex`, `CV.pdf`, and LaTeX aux files (gitignored) |
+| `findings/{ID}/` | Claude's read/write working space per job — analysis and prep files. Exists because `cv/` is read-blocked for Claude. Used for both workflows. |
 | `.env.my` | Personal details (name, email, phone, city) — **gitignored, never read by Claude** |
 | `.env.sample` | Template to copy to `.env.my` |
 | `profile.sample.md` | Sample work history — copy to `profile.my.md` to get started |
@@ -310,7 +324,7 @@ Output a **company positioning block** immediately, before anything else:
 I'm applying because [one sentence: why this role fits — connect to candidate's background].
 ```
 
-Then update `jobs.md` status to `interviewing` and create `cv/{ID}/prep_todos.md` with:
+Then update `jobs.md` status to `interviewing` and create `findings/{ID}/prep_todos.md` with:
 - **CV claims that need defending** — technologies cited in the CV where interview questions are likely
 - **Self-learning items** — skills cited from partial experience that need deepening
 - **Company/product knowledge** — minimum viable understanding of what the company builds

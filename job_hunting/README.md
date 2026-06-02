@@ -1,6 +1,9 @@
 # job_hunting
 
-Produces tailored, one-page LaTeX CVs for specific job positions. Each CV is derived from `profile.my.md` and `skills.my.md`, then optimised against a parsed job description using Claude Code.
+Handles two workflows:
+
+- **Outbound** — produces tailored, one-page LaTeX CVs for positions you apply to, derived from `profile.my.md` and `skills.my.md` and optimised against a parsed job description using Claude Code.
+- **Inbound** — interview preparation for positions where the employer contacted you. No CV generation; Claude reads the hiring materials and produces stage-specific prep files in `findings/{ID}/`.
 
 Each file has a `*.sample.*` committed template and a `*.my.*` personal version (gitignored). **`profile.my.md` and `skills.my.md` are required** — `/generate_cv_jh` will refuse to run without them. `template.my.tex` and `.env.my` have acceptable fallbacks and can be set up later.
 
@@ -155,6 +158,23 @@ Skips Steps 1–3 (already done), jumps straight to stack confirmation. After a 
 
 ---
 
+## Inbound workflow (employer contacted you)
+
+When the employer reaches out first, there is no CV to generate. The workflow is agentic — no slash command needed.
+
+1. **Gather materials** — hiring guide PDF, job email, any JD the employer shared
+2. **Register in `jobs.md`** with status `interviewing`
+3. **Create `findings/{ID}/`** — Claude's working folder for this opportunity
+4. **Tell Claude what you have** — paste the email, share the PDF. Claude reads everything and produces:
+   - `findings/{ID}/analysis.md` — company facts, tech stack, interview process, decisions (e.g. minimal tech stack for the call)
+   - `findings/{ID}/prep_screening.md` — prep for the first call, or equivalent stage file
+
+As the process progresses, add new prep files for each stage (`prep_build_it.md`, `prep_system_design.md`, etc.).
+
+> `findings/{ID}/` is where Claude reads and writes between sessions. `cv/` is read-blocked for privacy reasons — `findings/` is the workaround that keeps analysis accessible.
+
+---
+
 ## Before sending to the employer
 
 Open `cv/{ID}/CV.pdf`, read it in full, and re-save or re-export it before attaching to any application. This ensures you have reviewed the final content — Claude generates from your profile data, but you are responsible for what goes out.
@@ -224,7 +244,8 @@ Your real name, email, and phone never appear in any file Claude reads or writes
 | `template.sample.tex` | Sample CV format — copy to `template.my.tex` to customise |
 | `.env.sample` | Sample env file — copy to `.env.my` and fill in your details |
 | `jobs.md` | Job register: index table + detail sections (gitignored) |
-| `cv/{ID}/` | One folder per job — `CV.tex`, `CV.pdf`, `analysis.md`, LaTeX aux files (gitignored) |
+| `cv/{ID}/` | One folder per job — `CV.tex`, `CV.pdf`, LaTeX aux files (gitignored) |
+| `findings/{ID}/` | Claude's read/write working space per job — `analysis.md`, stage prep files (gitignored) |
 | `cv/.pending/{slug}/` | Temporary analysis output from `/analyze_job_description_jh` — moved to `cv/{ID}/` after compile (gitignored) |
 | `compile.sh` | Substitutes `.env.my` values and compiles via the Docker container |
 | `CLAUDE.md` | Full CV generation workflow — `/generate_cv_jh` follows this spec |
