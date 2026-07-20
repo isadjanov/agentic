@@ -105,17 +105,23 @@ This:
 
 ## Step 3 — Generate a CV
 
-### Single job (default)
-
-Run in Claude Code:
+### Single job (default) — `/apply`
 
 ```
-/generate_cv_jh <job URL>
+/apply <job URL>
 ```
 
-or paste the full job description text directly after `/generate_cv_jh`.
+or paste the full job description text directly after `/apply`.
 
-If `profile.my.md` or `skills.my.md` are missing, the command stops immediately with setup instructions before doing any work.
+One command for the whole pass: preflight, analysis, CV, compile. It replaces running `/start_jh` → `/analyze_job_description_jh` → `/generate_cv_jh` by hand.
+
+What it does differently from the three-command chain:
+
+- **Silent preflight** — checks the container and personal files, prints nothing unless something is wrong. A container that is already running is never restarted, so `/apply` costs nothing extra in an open session.
+- **Resumable** — re-running `/apply` on a job you already started picks up at the stage it stopped, derived from what is on disk. Interrupt it at the bullet review, come back tomorrow, run `/apply ENG-A42`, and it resumes at the bullet review.
+- **Duplicate detection** — a re-pasted listing is recognised by content hash and resumed instead of being filed under a second ID. Same company with a different role prompts you rather than guessing.
+- **Two stops instead of three** — gap questions and stack confirmation are answered together, then the bullet review.
+- **Fit gate** — below 60% it stops and asks before spending a CV pass on a weak match.
 
 Claude will:
 1. Parse the job description and extract ATS keywords
@@ -128,6 +134,8 @@ Claude will:
 8. Compile to `cv/ENG-A01/CV.pdf` with your real details substituted from `.env.my`
 
 If the PDF comes out at 2 pages, Claude will tighten spacing and recompile automatically.
+
+`/generate_cv_jh <job URL>` still works and does the same CV production without the preflight, resume and duplicate checks. Use it when you have already run `/start_jh` and know the job is new.
 
 ### Batch workflow (multiple jobs)
 
@@ -156,6 +164,16 @@ Each run fetches the JD, scores fit, resolves skill gap questions interactively,
 Skips Steps 1–3 (already done), jumps straight to stack confirmation.
 
 **Net effect:** total time is `sum(analysis times) + sum(write times)` — analyses are fast and non-interactive after gap questions are resolved.
+
+Prefer this over `/apply` when processing several listings at once: the analysis phase is near-autonomous and fans out well, whereas `/apply` stops twice for your input.
+
+### Running sessions in parallel
+
+Multiple Claude sessions can run these commands simultaneously without corrupting state. ID reservation, every `jobs.md` write, `skills.my.md` appends and container creation are serialised with `flock`; everything else is namespaced per job ID.
+
+All register writes go through `./jobs.sh` — never edit `jobs.md` by hand while a session is running. Locking `jobs.md` itself does not work: an in-place rewrite replaces the file's inode, so a second session would lock a different object and both would proceed.
+
+Throughput is bounded by you, not the tooling — the confirmation stops wait on your input, so parallel `/apply` sessions serialise on your attention.
 
 ---
 
@@ -246,10 +264,12 @@ Your real name, email, and phone never appear in any file Claude reads or writes
 | `.env.sample` | Sample env file — copy to `.env.my` and fill in your details |
 | `jobs.md` | Job register: index table + detail sections (gitignored) |
 | `cv/{ID}/` | One folder per job — `CV.pdf` only; Claude has no read or write access (gitignored) |
-| `findings/{ID}/` | Claude's read/write working space per job — `analysis.md` (created by analyze), `CV.tex` (outbound), stage prep files (gitignored) |
-| `compile.sh` | Substitutes `.env.my` values and compiles via the Docker container |
-| `CLAUDE.md` | Full CV generation workflow — `/generate_cv_jh` follows this spec |
-| `.claude/commands/` | Slash commands: `start_jh`, `stop_jh`, `analyze_job_description_jh`, `generate_cv_jh`, `recompile_cv` |
+| `findings/{ID}/` | Claude's read/write working space per job — `analysis.md` (created by analyze), `CV.tex` (outbound), `.compiled` stamp, stage prep files (gitignored) |
+| `compile.sh` | Substitutes `.env.my` values, compiles via the Docker container, writes the `.compiled` stamp |
+| `jobs.sh` | Serialised `jobs.md` writes — `reserve` / `update` / `status` / `get`. The only supported way to modify the register |
+| `state.sh` | Derives per-job workflow state from disk for `/apply` resume — `state` / `detail` / `hash` / `find-dup` |
+| `CLAUDE.md` | Full CV generation workflow — `/apply` and `/generate_cv_jh` follow this spec |
+| `.claude/commands/` | Slash commands: `apply`, `start_jh`, `stop_jh`, `analyze_job_description_jh`, `generate_cv_jh`, `recompile_cv` |
 
 Job ID format: `{DEPT}-{ALPHA}{NN}` — e.g. `ENG-A01`, `DAT-B03`.
 

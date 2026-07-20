@@ -49,14 +49,29 @@ sed \
   -e "s|YOURLINKEDIN|$(escape_sed "${CV_LINKEDIN}")|g" \
   "${TEX_FILE}" > "${TMP_TEX}"
 
-docker exec -w "/workspace/findings/${ID}" latex-jh \
+BUILD_LOG="$(docker exec -w "/workspace/findings/${ID}" latex-jh \
   bash -c "pdflatex -interaction=nonstopmode _CV_build.tex && \
-           pdflatex -interaction=nonstopmode _CV_build.tex"
+           pdflatex -interaction=nonstopmode _CV_build.tex")"
+echo "${BUILD_LOG}"
+
+# "Output written on _CV_build.pdf (1 page, 52341 bytes)." -> 1
+PAGES="$(printf '%s' "${BUILD_LOG}" | grep -oE 'Output written on [^(]*\([0-9]+ page' | grep -oE '[0-9]+ page' | grep -oE '[0-9]+' | tail -1 || true)"
 
 OUT_DIR="${SCRIPT_DIR}/cv/${ID}"
 mkdir -p "${OUT_DIR}"
 mv "${TEX_DIR}/_CV_build.pdf" "${OUT_DIR}/CV.pdf"
 rm -f "${TEX_DIR}/_CV_build."*
 
+# Compile stamp. Claude is denied Read(cv/**), so this is how the workflow knows a
+# PDF exists without reaching into the private folder. Contains no personal data.
+cat > "${TEX_DIR}/.compiled" <<STAMP
+id=${ID}
+compiled=$(date +%Y-%m-%dT%H:%M:%S%z)
+pages=${PAGES:-unknown}
+STAMP
+
 echo ""
-echo "Done: cv/${ID}/CV.pdf"
+echo "Done: cv/${ID}/CV.pdf (${PAGES:-?} page(s))"
+if [[ "${PAGES:-}" != "1" ]]; then
+  echo "WARNING: expected 1 page, got ${PAGES:-unknown} — tighten margins/spacing/bullets and recompile."
+fi

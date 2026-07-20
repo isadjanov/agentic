@@ -6,3 +6,9 @@ cv/
 jobs.md
 last_session.md
 findings/
+
+# lock files and compile stamps — runtime artifacts, never committed
+.jobs.lock
+.skills.lock
+.container.lock
+.jobs.md.*

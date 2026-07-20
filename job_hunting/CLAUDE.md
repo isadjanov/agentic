@@ -15,17 +15,28 @@ Handles two workflows:
 **NEVER read `.env.my`.** This file contains real personal data and must never be passed to Claude.
 If any step requires personal details, use the placeholders (`YOUR NAME`, `YOUR@EMAIL.COM`, `+00 000 000 0000`, `Your City`) and let `compile.sh` substitute them at compile time.
 
+**NEVER inspect `cv/`.** `Read(cv/**)` is denied in `.claude/settings.json`; do not work around it with Bash either. To check whether a CV was compiled, read `findings/{ID}/.compiled` — written by `compile.sh`, contains only ID, timestamp and page count.
+
+**NEVER write `jobs.md` directly.** Use `./jobs.sh reserve|update|status`. It holds `.jobs.lock` across the whole read/modify/write cycle. Locking `jobs.md` itself is ineffective — any in-place rewrite replaces the inode, so a second session locks a different object and both proceed. The same applies to `skills.my.md`, which must be appended under `.skills.lock`.
+
 ---
 
 ## Session commands
 
 | Command | When to use |
 |---|---|
+| `/apply {url\|text\|ID}` | **Default for a single job** — preflight, analysis, CV, compile in one pass. Silent when nothing is wrong; resumable; detects duplicates |
 | `/start_jh` | Start of every session — boots `latex-jh` container, validates files, shows pending analyses and last session state |
 | `/stop_jh` | End of session — stops container, writes `last_session.md` handoff |
 | `/analyze_job_description_jh {url\|text}` | Phase 1 of batch workflow — assigns job ID, registers in `jobs.md`, saves result to `findings/{ID}/analysis.md` |
 | `/generate_cv_jh [{ID\|url\|text}]` | Phase 2 — picks up analysis by ID (or takes fresh input), runs Steps 4–8, compiles PDF |
 | `/recompile_cv {ID}` | Re-runs `compile.sh` on an existing `CV.tex` without regenerating content |
+
+**Single job (default):**
+```
+/apply <url>            # or paste the JD text; resumes automatically if already started
+/apply ENG-A42          # resume a specific job at whatever stage it stopped
+```
 
 **Outbound batch workflow:**
 ```
@@ -62,7 +73,9 @@ No slash command — this is pure agentic work driven by what the employer sends
 | `skills.my.md` | **Canonical skills inventory** — only skills listed here may appear in a CV (gitignored) |
 | `jobs.md` | Job register — index table + full detail section per position (gitignored) |
 | `cv/{ID}/` | One folder per job; contains `CV.pdf` only — Claude has no read or write access to this folder |
-| `findings/{ID}/` | Claude's read/write working space per job — `CV.tex` (outbound), `analysis.md`, stage prep files. Used for both workflows. |
+| `findings/{ID}/` | Claude's read/write working space per job — `CV.tex` (outbound), `analysis.md`, `.compiled` stamp, stage prep files. Used for both workflows. |
+| `jobs.sh` | Serialised `jobs.md` writes — the only supported way to modify the register |
+| `state.sh` | Derives per-job workflow state from disk (`/apply` resume + duplicate detection) |
 | `.env.my` | Personal details (name, email, phone, city) — **gitignored, never read by Claude** |
 | `.env.sample` | Template to copy to `.env.my` |
 | `profile.sample.md` | Sample work history — copy to `profile.my.md` to get started |

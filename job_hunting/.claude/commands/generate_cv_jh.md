@@ -120,13 +120,17 @@ Run Steps 1 through 8 from `CLAUDE.md` in order:
    ```
    {ID} — {Company} — {Role Title}
    ```
-5. Register job in `jobs.md`:
+   When the user confirms a new skill, append it to `skills.my.md` under a lock — an unprotected read-modify-write loses one session's edits if two runs confirm skills at the same time:
+   ```bash
+   flock -x .skills.lock -c 'cat >> skills.my.md' <<< "{new skill lines}"
+   ```
+5. Register job in `jobs.md` — always via `./jobs.sh`, never by editing the file directly:
    - **If resuming from `findings/{ID}/analysis.md`** — job is already registered by `/analyze_job_description_jh`. Verify:
      ```bash
-     grep -q "^| {ID} |" jobs.md && echo "ok" || echo "missing"
+     ./jobs.sh get {ID} >/dev/null 2>&1 && echo "ok" || echo "missing"
      ```
-     If missing, add the index row now. If present, skip.
-   - **If starting fresh from URL/text** — assign the next ID (same logic as in `/analyze_job_description_jh`) and add the index row.
+     If missing, register it with `./jobs.sh update ...`. If present, skip.
+   - **If starting fresh from URL/text** — `ID=$(./jobs.sh reserve)`, then `./jobs.sh update "$ID" ...` once the company and title are known.
 6. Check for `template.my.tex`, fall back to `template.sample.tex` if absent, then create `findings/{ID}/CV.tex` using its preamble and section order — use placeholders for all personal details (see CLAUDE.md Step 6)
 6b. **STOP** — print the header `{ID} — {Company} — {Role Title}`, then present all experience bullets in plain text for review; wait for user confirmation; apply all edits in one batch before proceeding
 7. Run all quality checks from the checklist in `CLAUDE.md`

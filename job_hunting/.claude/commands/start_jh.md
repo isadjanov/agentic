@@ -4,12 +4,22 @@ Start the CV generation session: ensure the latex container is up, validate requ
 
 ### 1 — Start the latex container
 
+Skip this entirely if the container is already running — never restart a live container:
+
 ```bash
-docker start latex-jh 2>/dev/null || docker run -d --name latex-jh --restart unless-stopped \
+docker ps -q --filter name=latex-jh --filter status=running
+```
+
+Only if that is empty:
+
+```bash
+flock -x .container.lock -c 'docker start latex-jh 2>/dev/null || docker run -d --name latex-jh --restart unless-stopped \
   -v "$(pwd)":/workspace \
   --entrypoint tail \
-  texlive/texlive:latest -f /dev/null
+  texlive/texlive:latest -f /dev/null'
 ```
+
+The lock prevents two parallel sessions from racing to create the container, where the loser fails with `name already in use`.
 
 Verify it is running:
 ```bash

@@ -28,20 +28,15 @@ Then run /analyze_job_description_jh again.
 
 ## Reserve ID — do this immediately after the guard, before any analysis
 
-Atomically claim the next ID and write a placeholder row to `jobs.md` in a single `flock`-protected critical section. This prevents collisions when multiple instances run in parallel.
+Atomically claim the next ID and write a placeholder row to `jobs.md`:
 
 ```bash
-ID=$(flock -x jobs.md -c '
-  LAST=$(grep -oP "(?<=ENG-A)\d+" jobs.md 2>/dev/null | sort -n | tail -1)
-  N=$(printf "%02d" $(( ${LAST:-0} + 1 )))
-  printf "| ENG-A%s | %s | RESERVED | RESERVED | — | — | reserved | — |\n" \
-    "$N" "$(date +%Y-%m-%d)" >> jobs.md
-  echo "ENG-A$N"
-')
-mkdir -p "findings/$ID"
+ID=$(./jobs.sh reserve)
 ```
 
-`$ID` is now set (e.g. `ENG-A19`) and the folder exists. Use `$ID` for all subsequent steps.
+`$ID` is now set (e.g. `ENG-A19`) and `findings/$ID/` exists. Use `$ID` for all subsequent steps.
+
+`jobs.sh` holds an exclusive lock on `.jobs.lock` for the whole read/modify/write cycle. **Never write to `jobs.md` directly** — locking the register file itself does not work, because any in-place rewrite replaces its inode and a second session would lock a different object.
 
 ## Input handling
 
@@ -70,6 +65,7 @@ Write `findings/{ID}/analysis.md` with the following sections:
 id: {ID}
 source: {url or "pasted"}
 analyzed: {YYYY-MM-DD}
+jd_hash: {./state.sh hash <file containing the raw JD>}
 
 ## Raw JD
 {full original JD text}
@@ -113,8 +109,10 @@ Dropped (not in skills.md / not JD-matched): {list}
 Replace the placeholder row (written during ID reservation) with the real values:
 
 ```bash
-sed -i "/^| $ID |/c\| $ID | $(date +%Y-%m-%d) | {Role Title} | {Company} | {Location} | {Profile ID} | new | {url or —} |" jobs.md
+./jobs.sh update "$ID" "$(date +%Y-%m-%d)" "{Role Title}" "{Company}" "{Location}" "{Profile ID}" new "{url or —}"
 ```
+
+Goes through the same lock as the reservation, and passes values as arguments rather than splicing them into a `sed` expression — so titles containing `&`, `/` or `\` are written literally instead of being interpreted as replacement syntax.
 
 Status is always `new` at this stage — updated to `applied` / `interviewing` / etc. later.
 

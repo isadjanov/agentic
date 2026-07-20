@@ -49,7 +49,11 @@ Aggregating the gap tables alone yields a demand-ranked learning backlog:
 
 This has never been computed.
 
-### 5. No duplicate-company guard
+### 5. No duplicate-company guard — **partly fixed 2026-07-20**
+`/apply` now hashes the JD and resumes an exact re-paste instead of filing a second ID, and prompts
+on a company-name match. Historical analyses carry no `jd_hash`, so tier 1 only covers jobs
+processed from now on.
+
 Anthropic ×3, Staffbase ×2, neoshare AG ×2 — different IDs, different CVs, same company.
 Nothing warns before a second application goes out.
 
@@ -57,6 +61,20 @@ Nothing warns before a second application goes out.
 20 of 88 analyses land on exactly **85%**; median ≈ 80%; only 9 score below 60%.
 Stated strategy is "apply at 60–80%", yet most scores sit at or above that ceiling.
 A score that rarely says no is not filtering — it is post-hoc justification.
+
+---
+
+### 7. Concurrency bugs — **fixed 2026-07-20**
+Found while building `/apply`, all pre-existing:
+- `jobs.md` row rewrites (`sed -i`) ran outside any lock — concurrent sessions lost rows
+- `flock -x jobs.md` was ineffective anyway: `sed -i` replaces the inode, so a second session
+  locked a different object. Now uses a separate never-rewritten `.jobs.lock`
+- `$(( 08 + 1 ))` parsed as invalid octal — ID reservation would have aborted at `ENG-A08`/`A09`.
+  Only survived because the register is past that range. Now forced to base 10
+- `skills.my.md` appends were an unlocked read-modify-write
+- Container creation could race two sessions into `name already in use`
+
+Verified: 40 concurrent `reserve` calls produce 40 unique contiguous IDs, no lost rows.
 
 ---
 
