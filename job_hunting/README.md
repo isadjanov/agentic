@@ -122,39 +122,40 @@ Claude will:
 2. Score the fit against your skills (flags if below 60%)
 3. **Stop and show you the planned tech stack — you confirm or adjust before anything is written**
 4. Register the job in `jobs.md` with a generated ID (e.g. `ENG-A01`)
-5. Write `cv/ENG-A01/CV.tex` using your template and profile — personal details are placeholders
+5. Write `findings/ENG-A01/CV.tex` using your template and profile — personal details are placeholders
 6. **Stop and show you all experience bullets in plain text — you confirm or request edits**
 7. Run quality checks (1-page fit, ATS coverage, no floating skills, no banned words)
 8. Compile to `cv/ENG-A01/CV.pdf` with your real details substituted from `.env.my`
 
 If the PDF comes out at 2 pages, Claude will tighten spacing and recompile automatically.
 
-### Parallel batch (multiple jobs at once)
+### Batch workflow (multiple jobs)
 
 Use `/analyze_job_description_jh` to separate the non-interactive analysis from the interactive CV writing.
 
-**Phase 1 — run in parallel across N Claude Code sessions:**
+**Phase 1 — analyze sequentially (each run assigns the next ID and writes to `jobs.md`):**
 
-> Phase 1 does not need Docker or `/start_jh` — it is pure analysis with no compilation. Switch to **Haiku** (`meta+p`) before starting each session to save tokens; switch back to Sonnet for Phase 2.
-
-```
-/analyze_job_description_jh <job URL>   # session 1
-/analyze_job_description_jh <job URL>   # session 2
-/analyze_job_description_jh <job URL>   # session 3
-```
-
-Each session fetches the JD, scores fit, resolves skill gap questions interactively, and saves the full analysis to `cv/.pending/{slug}/analysis.md`. No writes to `jobs.md` or `skills.my.md` — fully parallel-safe.
-
-**Phase 2 — run sequentially in one session:**
+> Phase 1 does not need Docker or `/start_jh` — it is pure analysis with no compilation. Switch to **Haiku** (`meta+p`) before starting to save tokens; switch back to Sonnet for Phase 2.
 
 ```
-/generate_cv_jh cv/.pending/stripe-backend-engineer/analysis.md
-/generate_cv_jh cv/.pending/cloudflare-platform-engineer/analysis.md
+/analyze_job_description_jh <job URL>   # assigns ENG-A09, saves findings/ENG-A09/analysis.md
+/analyze_job_description_jh <job URL>   # assigns ENG-A10, saves findings/ENG-A10/analysis.md
+/analyze_job_description_jh <job URL>   # assigns ENG-A11, saves findings/ENG-A11/analysis.md
 ```
 
-Skips Steps 1–3 (already done), jumps straight to stack confirmation. After a successful compile the pending file is archived into `cv/{ID}/analysis.md` and the slot is removed.
+Each run fetches the JD, scores fit, resolves skill gap questions interactively, registers the job in `jobs.md`, and saves the full analysis to `findings/{ID}/analysis.md`.
 
-**Net effect:** total time is `max(analysis times) + sum(write times)` instead of `sum(all steps × N)`.
+**Phase 2 — generate CVs sequentially by ID:**
+
+```
+/generate_cv_jh ENG-A09
+/generate_cv_jh ENG-A10
+/generate_cv_jh ENG-A11
+```
+
+Skips Steps 1–3 (already done), jumps straight to stack confirmation.
+
+**Net effect:** total time is `sum(analysis times) + sum(write times)` — analyses are fast and non-interactive after gap questions are resolved.
 
 ---
 
@@ -171,7 +172,7 @@ When the employer reaches out first, there is no CV to generate. The workflow is
 
 As the process progresses, add new prep files for each stage (`prep_build_it.md`, `prep_system_design.md`, etc.).
 
-> `findings/{ID}/` is where Claude reads and writes between sessions. `cv/` is read-blocked for privacy reasons — `findings/` is the workaround that keeps analysis accessible.
+> `findings/{ID}/` is where Claude reads and writes between sessions — analysis, prep files, and `CV.tex`. `cv/` stores only the compiled PDF and is not accessible to Claude.
 
 ---
 
@@ -204,16 +205,16 @@ This stops the Docker container and saves a session handoff so `/start_jh` can r
 ## Privacy boundary
 
 ```
-Claude ──writes──▶ CV.tex  (YOUR NAME placeholder)
-                      │
-compile.sh ──reads──▶ .env.my  (real details, never seen by Claude)
-                      │
-              substitutes + pdflatex ×2
-                      │
-                   CV.pdf  (real details, local only)
+Claude ──writes──▶ findings/{ID}/CV.tex  (YOUR NAME placeholder)
+                              │
+compile.sh ──reads──▶ .env.my (real details, never seen by Claude)
+                              │
+                  substitutes + pdflatex ×2
+                              │
+                        cv/{ID}/CV.pdf   (real details, local only)
 ```
 
-Your real name, email, and phone never appear in any file Claude reads or writes. The job ID lives in the folder path only (`cv/ENG-A01/CV.pdf`).
+Your real name, email, and phone never appear in any file Claude reads or writes. The `cv/` folder is write-only for `compile.sh` — Claude has no access to it.
 
 ---
 
@@ -244,9 +245,8 @@ Your real name, email, and phone never appear in any file Claude reads or writes
 | `template.sample.tex` | Sample CV format — copy to `template.my.tex` to customise |
 | `.env.sample` | Sample env file — copy to `.env.my` and fill in your details |
 | `jobs.md` | Job register: index table + detail sections (gitignored) |
-| `cv/{ID}/` | One folder per job — `CV.tex`, `CV.pdf`, LaTeX aux files (gitignored) |
-| `findings/{ID}/` | Claude's read/write working space per job — `analysis.md`, stage prep files (gitignored) |
-| `cv/.pending/{slug}/` | Temporary analysis output from `/analyze_job_description_jh` — moved to `cv/{ID}/` after compile (gitignored) |
+| `cv/{ID}/` | One folder per job — `CV.pdf` only; Claude has no read or write access (gitignored) |
+| `findings/{ID}/` | Claude's read/write working space per job — `analysis.md` (created by analyze), `CV.tex` (outbound), stage prep files (gitignored) |
 | `compile.sh` | Substitutes `.env.my` values and compiles via the Docker container |
 | `CLAUDE.md` | Full CV generation workflow — `/generate_cv_jh` follows this spec |
 | `.claude/commands/` | Slash commands: `start_jh`, `stop_jh`, `analyze_job_description_jh`, `generate_cv_jh`, `recompile_cv` |

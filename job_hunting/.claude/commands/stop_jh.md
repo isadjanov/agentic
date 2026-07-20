@@ -38,23 +38,27 @@ Recurring gap: <skill> — appeared as T1/T2 in <ID1>, <ID2>. Add to skills.my.m
 
 ### 5 — Clean up stale pending analyses
 
+Find all jobs with status `new` that have an analysis but no CV yet:
+
 ```bash
-ls cv/.pending/*/analysis.md 2>/dev/null
+awk -F'|' '/\| new \|/{gsub(/ /,"",$2); print $2}' jobs.md | while read id; do
+  [ -f "findings/${id}/analysis.md" ] && [ ! -f "findings/${id}/CV.tex" ] && echo "${id}"
+done
 ```
 
-If any pending analyses remain, list them and ask:
+If any remain, list them and ask:
 
 ```
-Pending analyses not converted to CVs this session:
-  1. cv/.pending/{slug1}/analysis.md — {Company} — {Role}
-  2. cv/.pending/{slug2}/analysis.md — {Company} — {Role}
+Analyses not converted to CVs this session:
+  1. findings/{ID1}/analysis.md — {Company} — {Role}
+  2. findings/{ID2}/analysis.md — {Company} — {Role}
 
-Keep for next session or discard? (keep / discard all / discard 1,2,...)
+Keep for next session or abandon? (keep / abandon all / abandon 1,2,...)
 ```
 
-Wait for reply. For each discarded slug:
+Wait for reply. For each abandoned ID, delete only the analysis file (the folder and jobs.md row stay):
 ```bash
-rm -rf cv/.pending/{slug}
+rm findings/{ID}/analysis.md
 ```
 
 If no pending analyses exist, skip this step.

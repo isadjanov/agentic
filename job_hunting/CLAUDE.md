@@ -23,16 +23,18 @@ If any step requires personal details, use the placeholders (`YOUR NAME`, `YOUR@
 |---|---|
 | `/start_jh` | Start of every session — boots `latex-jh` container, validates files, shows pending analyses and last session state |
 | `/stop_jh` | End of session — stops container, writes `last_session.md` handoff |
-| `/analyze_job_description_jh {url\|text}` | Phase 1 of batch workflow — parallel-safe, runs Steps 1–3, saves result to `cv/.pending/{slug}/analysis.md` |
-| `/generate_cv_jh [{url\|text}]` | Phase 2 — picks up pending analysis (or takes fresh input), runs Steps 4–8, compiles PDF |
+| `/analyze_job_description_jh {url\|text}` | Phase 1 of batch workflow — assigns job ID, registers in `jobs.md`, saves result to `findings/{ID}/analysis.md` |
+| `/generate_cv_jh [{ID\|url\|text}]` | Phase 2 — picks up analysis by ID (or takes fresh input), runs Steps 4–8, compiles PDF |
 | `/recompile_cv {ID}` | Re-runs `compile.sh` on an existing `CV.tex` without regenerating content |
 
-**Outbound batch workflow (run multiple JDs in parallel):**
+**Outbound batch workflow:**
 ```
-/analyze_job_description_jh <url1>   # run N of these first
-/analyze_job_description_jh <url2>
-/generate_cv_jh                       # then run sequentially, one per job
+/analyze_job_description_jh <url1>   # assigns ENG-A09, saves findings/ENG-A09/analysis.md
+/analyze_job_description_jh <url2>   # assigns ENG-A10, saves findings/ENG-A10/analysis.md
+/generate_cv_jh ENG-A09              # then generate CVs sequentially by ID
+/generate_cv_jh ENG-A10
 ```
+Note: analyze sessions are parallel-safe — each instance reserves its ID atomically via `flock` at startup.
 
 **Inbound workflow (employer contacted you — no CV needed):**
 ```
@@ -59,8 +61,8 @@ No slash command — this is pure agentic work driven by what the employer sends
 | `profile.my.md` | Your experience stories and STAR narratives (gitignored) |
 | `skills.my.md` | **Canonical skills inventory** — only skills listed here may appear in a CV (gitignored) |
 | `jobs.md` | Job register — index table + full detail section per position (gitignored) |
-| `cv/{ID}/` | One folder per job; contains `CV.tex`, `CV.pdf`, and LaTeX aux files (gitignored) |
-| `findings/{ID}/` | Claude's read/write working space per job — analysis and prep files. Exists because `cv/` is read-blocked for Claude. Used for both workflows. |
+| `cv/{ID}/` | One folder per job; contains `CV.pdf` only — Claude has no read or write access to this folder |
+| `findings/{ID}/` | Claude's read/write working space per job — `CV.tex` (outbound), `analysis.md`, stage prep files. Used for both workflows. |
 | `.env.my` | Personal details (name, email, phone, city) — **gitignored, never read by Claude** |
 | `.env.sample` | Template to copy to `.env.my` |
 | `profile.sample.md` | Sample work history — copy to `profile.my.md` to get started |
@@ -117,9 +119,9 @@ cp skills.sample.md skills.my.md
 
 Use `/recompile_cv {ID}` — it runs `compile.sh`, which:
 1. Loads `.env.my`
-2. Substitutes `YOUR NAME`, `YOUR@EMAIL.COM`, `+00 000 000 0000`, `Your City` in a temp copy
+2. Substitutes `YOUR NAME`, `YOUR@EMAIL.COM`, `+00 000 000 0000`, `Your City` in a temp copy of `findings/{ID}/CV.tex`
 3. Runs `pdflatex` twice inside the `latex-jh` container
-4. Moves the output to `cv/{ID}/CV.pdf` and removes the temp files
+4. Moves the output PDF to `cv/{ID}/CV.pdf` and removes the temp files
 
 Always runs **twice** — first pass builds aux/outline files, second resolves references.
 Output must say `(1 page, ...)` — if 2 pages, tighten margins/spacing/bullets.
@@ -242,7 +244,7 @@ Defer until interview is arranged: full detail section, `prep_todos.md`, `compan
 
 ### Step 6 — Create LaTeX CV
 
-Base on `profile.my.md` (or `profile.sample.md` if absent) and `skills.my.md` (or `skills.sample.md` if absent). One folder per job: `cv/{ID}/CV.tex`.
+Base on `profile.my.md` (or `profile.sample.md` if absent) and `skills.my.md` (or `skills.sample.md` if absent). Write to `findings/{ID}/CV.tex` — Claude has no access to `cv/`; `compile.sh` moves the PDF there.
 
 **Read the active template first** — use `template.my.tex` if it exists, otherwise fall back to `template.sample.tex`. Use its preamble (font, packages, margins, formatting) verbatim and follow the section order defined by the `% ── SECTION ──` markers. Never override it.
 
@@ -395,3 +397,102 @@ Format: grouped by topic, each item as a `- [ ]` checkbox with a specific questi
 Apply to positions matching **60–80%** of the profile.
 Core must match: language family (JVM, Python, Go), cloud provider, system design depth.
 Gaps acceptable if tooling/framework-level. Gaps are blockers if foundational.
+
+---
+
+## Mock Interview Practice Workflow
+
+Use this when the company has shared the interview format and you want to practice before the real thing.
+Applies to any live coding + technical conversation stage (Revolut "Build It", similar formats at other companies).
+
+### Step 1 — Receive the interview brief
+
+The company sends a prep guide or the recruiter describes the format. Capture:
+- Coding format: algorithm vs real-world problem, time per task, number of tasks, allowed tools
+- Technical topics: exact list of concepts the interviewer will probe
+- Any specific constraints: language, frameworks allowed/forbidden, TDD expected
+
+Save to `findings/{ID}/analysis.md` under a section `## Interview process`.
+
+### Step 2 — Create prep files
+
+Create two files in `findings/{ID}/`:
+
+**`prep_{stage}_coding.md`** — covers the coding part:
+- IDE setup checklist and dependency list (JUnit 5, Mockito, AssertJ or equivalent)
+- Time strategy (N tasks in M minutes — how to split)
+- Clarifying questions to ask before coding (signals seniority)
+- 2–3 practice problems modelled on the company's domain, each with:
+  - Scenario (vague, as the interviewer gives it)
+  - Clarifying questions the candidate should ask
+  - Design notes (think-aloud points)
+  - Complete sample solution (Core Java, no framework unless allowed)
+  - Full test suite (happy path, edge cases, concurrency where required)
+  - "What they're testing" — the specific pattern the interviewer is looking for
+- Thread-safe patterns cheat sheet
+- DDD naming reference
+- SOLID one-liners
+
+**`prep_{stage}_technical.md`** — covers the technical conversation:
+- One section per topic from the brief
+- Each section: plain-language explanation → mechanics → trade-offs → Revolut/company context → interview gotcha
+- Written as a senior engineer explaining to a colleague, not as a textbook
+
+### Step 3 — Run mock interview (Option C: coding first, then technical)
+
+#### Coding part (interviewer mode)
+
+For each problem:
+1. Give only the vague scenario + starter interface — no hints
+2. Wait for the candidate to ask clarifying questions — respond as the interviewer would
+3. Candidate codes in IDE, pastes solution when done
+4. Review against these criteria:
+   - SOLID + DDD naming (Value Objects, domain language)
+   - Thread safety: correct concurrent primitive (`AtomicReference` + CAS, `ConcurrentHashMap.computeIfAbsent`, etc.)
+   - No Spring or framework annotations unless explicitly allowed
+   - Test coverage: happy path, edge cases (null, blank, zero, negative), concurrency test with `CountDownLatch`
+   - No lazy creation outside lambdas (e.g. don't build the result before `computeIfAbsent`)
+5. Give a score (0–100) with specific named bugs and what to fix
+6. Candidate fixes, pastes again — re-review until clean
+7. Move to next problem only after current one passes
+
+#### Technical conversation part
+
+Ask questions one at a time, in order of the topics in the brief.
+- Ask the question exactly as an interviewer would — no leading hints
+- Candidate answers
+- Give feedback: what was strong, what was missing, what the interviewer was actually probing for
+- If the answer was weak, ask a follow-up before moving on
+
+### Step 4 — Maintain the practice log
+
+Update `findings/{ID}/practice_log.md` after each problem and each technical question:
+
+```markdown
+## Problem N — {Name}
+
+**Interface given:** ...
+**Clarifying questions asked:** yes/no + what
+**Key design decisions:** ...
+**Bugs found and fixed:** numbered list
+**Final score:** N/100
+**Test coverage:** N tests — list what they cover
+```
+
+For technical questions:
+```markdown
+## Technical — {Topic}
+
+**Question asked:** ...
+**Answer quality:** strong / partial / weak
+**What was missing:** ...
+**Follow-up asked:** yes/no
+```
+
+### Step 5 — After practice is complete
+
+Update `findings/{ID}/analysis.md`:
+- Mark current stage as ready
+- Note any weak areas to revisit before the real interview
+
+Update `last_session.md` with next step (next stage prep or real interview date).

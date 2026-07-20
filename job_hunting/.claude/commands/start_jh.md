@@ -63,11 +63,17 @@ test -f .env.my && echo "exists" || echo "missing"
 
 ### 3 — Check pending analyses
 
+Find all jobs with status `new` in `jobs.md` that have an analysis but no CV yet:
+
 ```bash
-ls cv/.pending/*/analysis.md 2>/dev/null
+awk -F'|' '/\| new \|/{gsub(/ /,"",$2); print $2}' jobs.md | while read id; do
+  [ -f "findings/${id}/analysis.md" ] && [ ! -f "findings/${id}/CV.tex" ] && echo "${id}"
+done
 ```
 
-Count the results and note the slugs.
+This correctly excludes `interviewing`/`applied` roles (e.g. inbound roles that have analysis.md but never need a CV).
+
+Count the results and note the IDs.
 
 ### 4 — Check last session
 
@@ -85,7 +91,7 @@ profile.my.md:    ✅ personal  /  ❌ MISSING — cp profile.sample.md profile.
 skills.my.md:     ✅ personal  /  ❌ MISSING — cp skills.sample.md skills.my.md then edit
 template.my.tex:  ✅ personal  /  ⚠ sample (cp template.sample.tex template.my.tex to customise)
 .env.my:          ✅ exists    /  ⚠ missing — cp .env.sample .env.my then fill in details
-Pending analyses: {N} ({slug1}, {slug2}, ...)  /  none
+Pending analyses: {N} ({ID1}, {ID2}, ...)  /  none
 Last session:     <Next step content or "fresh session">
 ```
 

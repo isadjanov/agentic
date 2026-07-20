@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Compiles cv/{ID}/CV.tex with personal details substituted from .env.my.
+# Compiles findings/{ID}/CV.tex with personal details substituted from .env.my.
+# Output PDF is written to cv/{ID}/CV.pdf. Claude never touches the cv/ folder.
 # Claude never reads .env.my — substitution happens entirely in this script.
 set -euo pipefail
 
@@ -21,11 +22,11 @@ source "${ENV_FILE}"
 : "${CV_CITY:?CV_CITY not set in .env.my}"
 CV_LINKEDIN="${CV_LINKEDIN:-}"
 
-TEX_DIR="${SCRIPT_DIR}/cv/${ID}"
+TEX_DIR="${SCRIPT_DIR}/findings/${ID}"
 TEX_FILE="${TEX_DIR}/CV.tex"
 
 if [[ ! -f "${TEX_FILE}" ]]; then
-  echo "ERROR: ${TEX_FILE} not found. Run /generate first to generate the CV."
+  echo "ERROR: ${TEX_FILE} not found. Run /generate_cv_jh first to generate the CV."
   exit 1
 fi
 
@@ -48,11 +49,13 @@ sed \
   -e "s|YOURLINKEDIN|$(escape_sed "${CV_LINKEDIN}")|g" \
   "${TEX_FILE}" > "${TMP_TEX}"
 
-docker exec -w "/workspace/cv/${ID}" latex-jh \
+docker exec -w "/workspace/findings/${ID}" latex-jh \
   bash -c "pdflatex -interaction=nonstopmode _CV_build.tex && \
            pdflatex -interaction=nonstopmode _CV_build.tex"
 
-mv "${TEX_DIR}/_CV_build.pdf" "${TEX_DIR}/CV.pdf"
+OUT_DIR="${SCRIPT_DIR}/cv/${ID}"
+mkdir -p "${OUT_DIR}"
+mv "${TEX_DIR}/_CV_build.pdf" "${OUT_DIR}/CV.pdf"
 rm -f "${TEX_DIR}/_CV_build."*
 
 echo ""

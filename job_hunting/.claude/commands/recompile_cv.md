@@ -10,9 +10,9 @@ If `$ARGUMENTS` is non-empty, use it as the ID directly.
 
 If `$ARGUMENTS` is empty:
 ```bash
-ls cv/
+ls findings/*/CV.tex 2>/dev/null
 ```
-List the available IDs and ask the user which one to compile. Stop here until they reply.
+Extract the job IDs from the paths and ask the user which one to compile. Stop here until they reply.
 
 ### 2 — Check `.env.my` exists
 
